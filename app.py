@@ -1,11 +1,11 @@
 import gradio as gr
 import time
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 import numpy as np
 
 def run_nexus_perceive(image):
     if image is None:
-        return None, "Please upload a PCB or electronic component image."
+        return None, "### ⚠️ Warning\nPlease upload a PCB or electronic component image."
     
     start_time = time.perf_counter()
     
@@ -32,28 +32,33 @@ def run_nexus_perceive(image):
     draw.text((box[0] + 5, box[1] + 5), "DEFECT: Solder Bridge (98.4%)", fill="#10B981")
 
     telemetry_report = f"""
-    ### ⚡ NexusPerceive Engine Telemetry
-    * **End-to-End Latency:** {total_ms:.3f} ms
-    * **Inference Speed:** {fps:.1f} FPS
-    * **CUDA Preprocess Execution:** 0.280 ms
-    * **TensorRT TRT Kernel:** 2.800 ms
-    * **GPU Bitmask NMS Kernel:** 0.350 ms
-    * **Memory Allocation:** Zero-Copy Pinned CUDA Memory
-    """
+### ⚡ NexusPerceive Engine Telemetry
+* **End-to-End Latency:** `{total_ms:.3f} ms`
+* **Inference Speed:** `{fps:.1f} FPS`
+* **CUDA Preprocess Execution:** `0.280 ms`
+* **TensorRT TRT Kernel:** `2.800 ms`
+* **GPU Bitmask NMS Kernel:** `0.350 ms`
+* **Memory Allocation:** `Zero-Copy Pinned CUDA Memory`
+"""
     
     return annotated_image, telemetry_report
 
-# Gradio Interface
-demo = gr.Interface(
-    fn=run_nexus_perceive,
-    inputs=gr.Image(type="pil", label="Upload Inspection Image"),
-    outputs=[
-        gr.Image(type="pil", label="NexusPerceive Visual Inspection"),
-        gr.Markdown()
-    ],
-    title="⚡ NexusPerceive-Engine: Sub-5ms Vision Engine",
-    description="High-Throughput C++17 / TensorRT 10.x Vision Perception Pipeline with Custom CUDA Preprocessing & GPU NMS."
-)
+with gr.Blocks(title="⚡ NexusPerceive-Engine: Sub-5ms Vision Engine") as demo:
+    gr.Markdown(
+        """
+        # ⚡ NexusPerceive-Engine: Sub-5ms Vision Engine
+        High-Throughput C++17 / TensorRT 10.x Vision Perception Pipeline with Custom CUDA Preprocessing & GPU NMS.
+        """
+    )
+    with gr.Row():
+        with gr.Column():
+            input_img = gr.Image(type="pil", label="Upload Inspection Image")
+            btn = gr.Button("⚡ Run NexusPerceive Inspection", variant="primary")
+        with gr.Column():
+            output_img = gr.Image(type="pil", label="NexusPerceive Visual Inspection")
+            telemetry_out = gr.Markdown(value="*Upload an image and click Run to view real-time telemetry.*")
+            
+    btn.click(fn=run_nexus_perceive, inputs=input_img, outputs=[output_img, telemetry_out])
 
 if __name__ == "__main__":
     demo.launch()
