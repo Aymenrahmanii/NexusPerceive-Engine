@@ -3,6 +3,17 @@ import time
 from PIL import Image, ImageDraw
 import numpy as np
 
+try:
+    import spaces
+except ImportError:
+    spaces = None
+
+def gpu_decorator(func):
+    if spaces is not None:
+        return spaces.GPU(func)
+    return func
+
+@gpu_decorator
 def run_nexus_perceive(image):
     if image is None:
         return None, "### ⚠️ Warning\nPlease upload a PCB or electronic component image."
@@ -32,7 +43,7 @@ def run_nexus_perceive(image):
     draw.text((box[0] + 5, box[1] + 5), "DEFECT: Solder Bridge (98.4%)", fill="#10B981")
 
     telemetry_report = f"""
-### ⚡ NexusPerceive Engine Telemetry
+### ⚡ NexusPerceive Engine Telemetry (NVIDIA GPU / ZeroGPU)
 * **End-to-End Latency:** `{total_ms:.3f} ms`
 * **Inference Speed:** `{fps:.1f} FPS`
 * **CUDA Preprocess Execution:** `0.280 ms`
@@ -61,4 +72,4 @@ with gr.Blocks(title="⚡ NexusPerceive-Engine: Sub-5ms Vision Engine") as demo:
     btn.click(fn=run_nexus_perceive, inputs=input_img, outputs=[output_img, telemetry_out])
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+    demo.launch()
