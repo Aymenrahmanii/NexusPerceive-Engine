@@ -1,0 +1,41 @@
+# Dockerfile.release
+# Multi-stage release container for optimized NexusPerceive runtime
+
+FROM nvcr.io/nvidia/tensorrt:24.03-py3 AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    git \
+    libopencv-dev \
+    libprotobuf-dev \
+    protobuf-compiler \
+    libgrpc++-dev \
+    protobuf-compiler-grpc \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY . /workspace/nexus_perceive_engine
+WORKDIR /workspace/nexus_perceive_engine
+
+RUN mkdir -p build && cd build && \
+    cmake -DCMAKE_BUILD_TYPE=Release .. && \
+    make -j$(nproc) nexus_perceive_app benchmark_throughput
+
+FROM nvcr.io/nvidia/tensorrt:24.03-py3 AS runner
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libopencv-core4.5d \
+    libopencv-imgproc4.5d \
+    libprotobuf23 \
+    libgrpc++1.43 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/nexus_perceive
+COPY --from=builder /workspace/nexus_perceive_engine/build/nexus_perceive_app /opt/nexus_perceive/nexus_perceive_app
+COPY --from=builder /workspace/nexus_perceive_engine/build/benchmark_throughput /opt/nexus_perceive/benchmark_throughput
+
+EXPOSE 50051
+
+ENTRYPOINT ["/opt/nexus_perceive/nexus_perceive_app"]

@@ -1,0 +1,30 @@
+# Dockerfile.devel
+# High-Throughput C++ / TensorRT Development Environment
+FROM nvcr.io/nvidia/tensorrt:24.03-py3
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV CCACHE_DIR=/tmp/ccache
+
+# Install System Build Toolchain & Dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    git \
+    ninja-build \
+    libopencv-dev \
+    libprotobuf-dev \
+    protobuf-compiler \
+    libgrpc++-dev \
+    protobuf-compiler-grpc \
+    libgtest-dev \
+    gdb \
+    valgrind \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Build and Install GoogleTest
+RUN cd /usr/src/gtest && cmake CMakeLists.txt && make -j$(nproc) && cp lib/*.a /usr/lib/
+
+WORKDIR /workspace/nexus_perceive_engine
+
+CMD ["/bin/bash"]

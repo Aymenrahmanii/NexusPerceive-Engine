@@ -1,0 +1,37 @@
+# Build directories
+/build/
+/build*/
+/cmake-build-*/
+/bin/
+/lib/
+/out/
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Python cache & virtual environments
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# Large model binaries and dynamic media artifacts
+*.engine
+*.onnx
+*.weights
+models/*.mp4
+models/*.jpg
+!models/.gitkeep
+
+# Logs and profiling outputs
+*.log
+/models/vram_latency_profile_report.json
