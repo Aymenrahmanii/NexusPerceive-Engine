@@ -58,7 +58,7 @@ with gr.Blocks(title="⚡ NexusPerceive-Engine: Sub-5ms Vision Engine") as demo:
             output_img = gr.Image(type="pil", label="NexusPerceive Visual Inspection")
             telemetry_out = gr.Markdown(value="*Upload an image and click Run to view real-time telemetry.*")
             
-    btn.click(fn=run_nexus_perceive, inputs=input_img, outputs=[output_img, telemetry_out], api_name=False)
+    btn.click(fn=run_nexus_perceive, inputs=input_img, outputs=[output_img, telemetry_out])
 
 if __name__ == "__main__":
-    demo.launch(show_api=False)
+    demo.launch()
