@@ -1,3 +1,16 @@
+---
+title: NexusPerceive Engine
+emoji: ⚡
+colorFrom: blue
+colorTo: yellow
+sdk: gradio
+sdk_version: 6.22.0
+python_version: '3.12'
+app_file: app.py
+pinned: false
+license: mit
+---
+
 # NexusPerceive-Engine 🚀
 
 [![C++ Standard](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B17)
