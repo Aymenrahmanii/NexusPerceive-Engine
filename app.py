@@ -61,4 +61,4 @@ with gr.Blocks(title="⚡ NexusPerceive-Engine: Sub-5ms Vision Engine") as demo:
     btn.click(fn=run_nexus_perceive, inputs=input_img, outputs=[output_img, telemetry_out], api_name=False)
 
 if __name__ == "__main__":
-    demo.launch(ssr=False, show_api=False)
+    demo.launch(show_api=False)
