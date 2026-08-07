@@ -49,11 +49,10 @@ demo = gr.Interface(
     inputs=gr.Image(type="pil", label="Upload Inspection Image"),
     outputs=[
         gr.Image(type="pil", label="NexusPerceive Visual Inspection"),
-        gr.Markdown(label="Real-Time Telemetry")
+        gr.Markdown()
     ],
     title="⚡ NexusPerceive-Engine: Sub-5ms Vision Engine",
-    description="High-Throughput C++17 / TensorRT 10.x Vision Perception Pipeline with Custom CUDA Preprocessing & GPU NMS.",
-    examples=[]
+    description="High-Throughput C++17 / TensorRT 10.x Vision Perception Pipeline with Custom CUDA Preprocessing & GPU NMS."
 )
 
 if __name__ == "__main__":
