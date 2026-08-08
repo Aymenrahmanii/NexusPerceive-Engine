@@ -11,6 +11,19 @@ import torch.nn as nn
 
 MODEL_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "MY_COMPLIANT_INDUSTRIAL_RTDETR")
 
+class RTDetrExportWrapper(nn.Module):
+    """
+    Wrapper module to isolate exact ONNX output tensors (logits, pred_boxes)
+    for TensorRT IExecutionContext compatibility.
+    """
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+
+    def forward(self, pixel_values):
+        outputs = self.model(pixel_values=pixel_values)
+        return outputs.logits, outputs.pred_boxes
+
 class DummyDetectionModel(nn.Module):
     """
     Fallback lightweight spatial detection backbone + head simulating RT-DETR.
@@ -44,16 +57,18 @@ def export_onnx():
     if os.path.exists(MODEL_DIR):
         print(f"[EXPORT] Found trained RT-DETR model directory: {MODEL_DIR}")
         from transformers import RTDetrForObjectDetection
-        model = RTDetrForObjectDetection.from_pretrained(MODEL_DIR)
-        model.eval()
+        raw_model = RTDetrForObjectDetection.from_pretrained(MODEL_DIR)
+        raw_model.eval()
+        
+        wrapper = RTDetrExportWrapper(raw_model).eval()
         dummy_input = torch.randn(1, 3, 640, 640)
         
         print(f"[EXPORT] Exporting industrial RT-DETR model to ONNX: {onnx_path}")
         torch.onnx.export(
-            model,
+            wrapper,
             (dummy_input,),
             onnx_path,
-            opset_version=17,
+            opset_version=18,
             input_names=["images"],
             output_names=["logits", "pred_boxes"],
             dynamic_axes={
