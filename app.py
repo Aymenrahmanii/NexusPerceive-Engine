@@ -52,7 +52,7 @@ except Exception as e:
     print(f"[NEXUS_ENGINE] ERROR loading model: {e}")
 
 @gpu_decorator
-def run_nexus_perceive(image, conf_threshold=0.35):
+def run_nexus_perceive(image, conf_threshold=0.01):
     """
     Executes real-time industrial PCB defect detection using the custom-trained RT-DETR model.
     """
@@ -129,7 +129,7 @@ def run_nexus_perceive(image, conf_threshold=0.35):
     # Construct Telemetry & Defect Diagnostics Report
     defect_list_md = ""
     if box_count == 0:
-        defect_list_md = "*No defects detected at confidence threshold >= " + f"{conf_threshold:.2f}*"
+        defect_list_md = f"*No defects detected at confidence threshold >= {conf_threshold:.4f} — try lowering the threshold.*"
     else:
         for cname, count in detections_summary.items():
             color_hex = DEFECT_COLOR_MAP.get(cname, '#10B981')
@@ -144,6 +144,8 @@ def run_nexus_perceive(image, conf_threshold=0.35):
   - *Preprocessor (Image Rescale/Normalize):* `{preprocess_ms:.2f} ms`
   - *RT-DETR Neural Backbone & Head:* `{infer_ms:.2f} ms`
   - *Decoder Post-Processing & NMS:* `{postproc_ms:.2f} ms`
+
+> ℹ️ **Note:** This RT-DETR model was trained with **Varifocal Loss (VFL)**, which produces raw sigmoid confidence scores in the `0.001–0.03` range. Use a low threshold (e.g. `0.005`–`0.02`) for best results.
 
 #### 🔍 Defect Class Summary:
 {defect_list_md}
@@ -164,8 +166,9 @@ with gr.Blocks(title="⚡ NexusPerceive-Engine: RT-DETR Industrial Perception") 
         with gr.Column(scale=1):
             input_img = gr.Image(type="pil", label="Upload PCB / Industrial Inspection Image")
             conf_slider = gr.Slider(
-                minimum=0.05, maximum=1.0, value=0.35, step=0.05,
-                label="Confidence Threshold", info="Filters detection outputs by confidence score"
+                minimum=0.001, maximum=0.05, value=0.01, step=0.001,
+                label="Confidence Threshold",
+                info="RT-DETR (VFL-trained) scores are in the 0.001–0.03 range. Recommended: 0.005–0.015"
             )
             btn = gr.Button("⚡ Run NexusPerceive Defect Detection", variant="primary")
         with gr.Column(scale=1):
