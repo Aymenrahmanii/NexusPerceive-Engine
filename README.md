@@ -18,13 +18,30 @@ license: mit
 [![gRPC](https://img.shields.io/badge/gRPC-1.62%2B-4285F4.svg)](https://grpc.io/)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 
-**NexusPerceive-Engine** is an industrial-grade, ultra-low-latency C++ / TensorRT Spatial Perception & Vision Pipeline engineered for real-time edge and server-grade object detection (e.g. RT-DETR, YOLOv9).
+**NexusPerceive-Engine** is an industrial-grade, ultra-low-latency C++ / TensorRT Spatial Perception & Vision Pipeline engineered for real-time edge and server-grade object detection powered by custom-trained **RT-DETR** (ResNet Backbone) and YOLO architectures.
+
+It features an integrated end-to-end workflow: **Custom RT-DETR Defect Model Training $\to$ Interactive Gradio / HF Space Demo $\to$ Clean ONNX Export $\to$ TensorRT $\le 4.2\text{ ms}$ Engine Acceleration**.
 
 **Performance Target**: $\le 4.2\text{ ms}$ End-to-End Latency ($\ge 235\text{ FPS}$) @ FP16/INT8 precision on NVIDIA RTX 3090/4090 and Jetson Orin AGX, reducing VRAM footprint by **$> 45\%$** compared to PyTorch eager runtime.
 
 ---
 
-## 1. Mathematical & Engineering Foundations
+## 1. Industrial PCB Defect Perception Model
+
+NexusPerceive-Engine includes a custom-trained **RT-DETR Industrial Defect Detection Model** (`MY_COMPLIANT_INDUSTRIAL_RTDETR`), trained with Varifocal Loss (VFL) for high-accuracy defect identification across 6 critical PCB industrial categories:
+
+1. 🔴 **`mouse_bite`** — Edge erosion & copper boundary bites
+2. 🟠 **`spur`** — Unwanted metallic trace protrusions
+3. 🔵 **`missing_hole`** — Un-drilled or blocked via holes
+4. 💖 **`short`** — Unintended trace bridge short-circuits
+5. 🟣 **`open_circuit`** — Disconnected copper signal paths
+6. 🟢 **`spurious_copper`** — Isolated etching residue
+
+Model weights (`model.safetensors`, ~171.5 MB) are tracked via **Git LFS** ([.gitattributes](.gitattributes)) for seamless deployment to both **GitHub** and **Hugging Face Space**.
+
+---
+
+## 2. Mathematical & Engineering Foundations
 
 To eliminate CPU bottlenecks and achieve real-time throughput (>120 FPS), NexusPerceive operates on three foundational principles:
 
@@ -59,7 +76,7 @@ $$I_{\text{out}}(c, y, x) = \frac{\frac{I_{\text{in}}(x', y', c)}{255.0} - \mu_c
 
 ---
 
-## 2. System Architecture
+## 3. System Architecture
 
 ```mermaid
 graph TD
@@ -100,7 +117,7 @@ graph TD
 
 ---
 
-## 3. Low-Level Memory Lifecycle & Latency Budget
+## 4. Low-Level Memory Lifecycle & Latency Budget
 
 | Pipeline Stage | Implementation Detail | Memory Domain | Latency Target ($\mu\text{s}$) | Memory Bandwidth / Size |
 |---|---|---|---|---|
@@ -115,11 +132,17 @@ graph TD
 
 ---
 
-## 4. Directory Structure
+## 5. Directory Structure
 
 ```
-nexus_perceive_engine/
+NexusPerceive-Engine/
+├── .gitattributes                      # Git LFS tracking configuration (*.safetensors)
 ├── CMakeLists.txt                      # Multi-stage Modern CMake 3.28+ build file
+├── app.py                              # Gradio web app & HF Space entrypoint (RT-DETR inference UI)
+├── MY_COMPLIANT_INDUSTRIAL_RTDETR/     # Custom trained RT-DETR model weights & config
+│   ├── config.json                     # RTDetrForObjectDetection VFL architecture config
+│   ├── model.safetensors               # Binary weights (171.5 MB, tracked with Git LFS)
+│   └── preprocessor_config.json        # Image scaling & resolution settings
 ├── cmake/                              # CMake module packages (CUDA, TensorRT, OpenCV)
 │   ├── FindCUDA.cmake
 │   ├── FindTensorRT.cmake
@@ -149,10 +172,11 @@ nexus_perceive_engine/
 │   └── postprocess_kernel.cu           # Parallel GPU NMS kernel
 ├── proto/                              # Protocol Buffers
 │   └── perception_service.proto        # Service definition (FrameRequest, DetectionResult)
+├── requirements.txt                    # Python dependencies (torch, transformers, gradio, spaces)
 ├── scripts/                            # Python Tools & Verification Suite
 │   ├── calibrate_int8.py               # TensorRT INT8 PTQ entropy calibrator
 │   ├── create_sample_video.py          # Dynamic 1080p sample traffic stream generator
-│   ├── export_onnx_model.py            # Dynamic shape ONNX model exporter
+│   ├── export_onnx_model.py            # RT-DETR model to ONNX exporter (opset 18 wrapper)
 │   ├── grpc_client.py                  # gRPC streaming client harness
 │   ├── perception_pb2_mock.py          # Binary Protobuf encoder/decoder
 │   ├── profile_vram_and_latency.py     # VRAM footprint & latency percentile profiler
@@ -179,27 +203,39 @@ nexus_perceive_engine/
 
 ---
 
-## 5. Technology Stack & Rationale
+## 6. Technology Stack & Rationale
 
 | Technology | Version | Rationale & Architectural Choice |
 |---|---|---|
 | **ISO C++ Standard** | `C++17` | Structured bindings, zero-overhead memory abstractions in native loops. |
 | **NVIDIA CUDA Toolkit** | `12.4+` | CUDA Graphs, async stream operations, mapped pinned host memory. |
 | **NVIDIA TensorRT** | `10.x` | Fused layer kernels, autotuned FP16/INT8 PTQ engine execution. |
+| **PyTorch & Transformers** | `2.x / 4.x` | Model training & Hugging Face RT-DETR architecture support. |
+| **Gradio & HuggingFace Spaces**| `6.x` | ZeroGPU web demonstration UI with interactive confidence tuning. |
 | **OpenCV C++ Module** | `4.9.0 (CUDA)` | Frame ingestion & visualization. Native CUDA kernels handle pipeline math. |
 | **gRPC / Protobuf** | `1.62+` | Binary zero-copy stream serialization for microservice communication. |
 | **CMake** | `3.28+` | Native CUDA language bindings (`ENABLE_LANGUAGE(CUDA)`). |
-| **GoogleTest** | `1.14.0` | Industrial testing framework for CUDA memory & engine thread safety. |
 | **Docker (NVCR Base)** | `nvcr.io/nvidia/tensorrt:24.03` | Official NVIDIA CUDA/TensorRT container base image. |
 
 ---
 
-## 6. Quick Start & Execution
+## 7. Quick Start & Execution
 
 ### Prerequisites
 - NVIDIA GPU (RTX 3090 / 4090, Jetson Orin AGX, or T4/A100)
 - NVIDIA CUDA Toolkit 12.4+ & TensorRT 10.x
-- Python 3.10+ & OpenCV (`pip install opencv-python onnxruntime numpy`)
+- Python 3.10+ & dependencies (`pip install -r requirements.txt onnx onnxscript`)
+
+### Running the Web Demo App (Gradio / HF Space)
+```bash
+python app.py
+```
+
+### Exporting Trained RT-DETR Model to ONNX
+```bash
+python scripts/export_onnx_model.py
+# Exports MY_COMPLIANT_INDUSTRIAL_RTDETR to models/rt_detr_r50vd.onnx
+```
 
 ### Running Real-Time Detection & ByteTrack MOT
 ```bash
@@ -219,14 +255,14 @@ python scripts/realtime_camera_pipeline.py --input "rtsp://192.168.1.100:554/str
 python scripts/grpc_client.py --server "localhost:50051" --input "models/sample_traffic_video.mp4"
 ```
 
-### Running VRAM & Latency Percentile Profiler
+### Running Mathematical Verification Suite
 ```bash
-python scripts/profile_vram_and_latency.py --iterations 1000
+python scripts/verify_pipeline.py
 ```
 
 ---
 
-## 7. Verified Benchmark Results
+## 8. Verified Benchmark Results
 
 | Benchmark Metric | Target Requirement | Measured Benchmark Result | Status |
 |---|---|---|---|
@@ -240,6 +276,6 @@ python scripts/profile_vram_and_latency.py --iterations 1000
 
 ---
 
-## 8. License
+## 9. License
 
 Distributed under the MIT License. See `LICENSE` for details.
