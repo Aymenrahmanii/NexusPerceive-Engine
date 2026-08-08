@@ -1,3 +1,8 @@
 spaces
 pillow
 numpy
+gradio
+torch
+torchvision
+transformers
+accelerate

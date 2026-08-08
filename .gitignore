@@ -35,3 +35,7 @@ models/*.jpg
 # Logs and profiling outputs
 *.log
 /models/vram_latency_profile_report.json
+
+# Nested workspace clones
+/NexusPerceive-Engine/
+
